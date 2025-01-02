@@ -34,3 +34,28 @@ def log_function_calls(func):
 @log_function_calls
 def add_numbers(a, b):
     return a + b
+
+
+# logging to file using logging module
+
+import logging
+
+# configure the logger
+logging.basicConfig(level=logging.INFO, filename='function_calls.log', filemode='a', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+def log_func_calls(func):
+    import functools
+
+    # This below line preserves the metadata like function name and docstring etc
+    @functools.wraps(func)
+    def wrapper_function(*args, **kwargs):
+        logging.info(f"Calling function '{func.__name__}' with arguments {args} and keyword arguments {kwargs}")
+        result = func(*args, **kwargs)
+        logging.info(f"Function '{func.__name__}' returned {result}")
+        return result
+    return wrapper_function
+
+
+@log_func_calls
+def add_numbers(a, b):
+    return a + b
