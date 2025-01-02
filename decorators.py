@@ -138,3 +138,201 @@ print(obj.method_a(5))  # Output: method_a works correctly.
 print(obj.method_b(3))  # Output: method_b works correctly.
 
 
+# Authentication Decorator in Flask
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+def require_token(func):
+    import functools
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        token = request.headers.get('Authorization')  # Extract token from headers
+        if not token or token != "my-secret-token":
+            return jsonify({"error": "Unauthorized"}), 401
+        return func(*args, **kwargs)
+    return wrapper
+
+@app.route('/protected')
+@require_token
+def protected():
+    return jsonify({"message": "Welcome to the protected resource!"})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+# Authentication Decorator with Django
+
+from django.http import JsonResponse
+
+def require_authentication(func):
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:  # Django's built-in user authentication
+            return JsonResponse({"error": "Unauthorized"}, status=401)
+        return func(request, *args, **kwargs)
+    return wrapper
+
+# Usage example
+from django.shortcuts import render
+
+@require_authentication
+def protected_view(request):
+    return JsonResponse({"message": "Welcome to the protected view!"})
+
+
+# Basic Access Control Decorator
+
+def access_control(permission_check):
+    """
+    A decorator to enforce access control.
+    """
+    import functools
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if not permission_check():
+                return "Access Denied: You don't have permission to perform this action.", 403
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+# Example Permission Check Function
+def is_admin():
+    # Replace with actual logic to check user role
+    return True  # Simulate admin user
+
+# Apply Access Control
+@access_control(is_admin)
+def admin_action():
+    return "Admin action performed!"
+
+# Test
+print(admin_action())  # Output: "Admin action performed!"
+
+# Basic Resource Management Example
+
+def manage_resource(acquire, release):
+    """
+    A decorator to manage resources.
+    """
+    import functools
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            resource = acquire()  # Acquire the resource
+            try:
+                return func(resource, *args, **kwargs)  # Pass the resource to the function
+            finally:
+                release(resource)  # Release the resource
+        return wrapper
+    return decorator
+
+# Example: File Resource Management
+def open_file():
+    print("Opening file...")
+    return open("example.txt", "w")
+
+def close_file(file):
+    print("Closing file...")
+    file.close()
+
+@manage_resource(open_file, close_file)
+def write_to_file(file, content):
+    print("Writing to file...")
+    file.write(content)
+
+# Usage
+write_to_file("Hello, world!")
+# Output:
+# Opening file...
+# Writing to file...
+# Closing file...
+
+
+# Context Managers with Decorators
+
+from contextlib import contextmanager
+
+def manage_resource_with_context(context_manager):
+    """
+    A decorator to manage resources using a context manager.
+    """
+    import functools
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            with context_manager() as resource:
+                return func(resource, *args, **kwargs)
+        return wrapper
+    return decorator
+
+# Example: Database Connection
+@contextmanager
+def db_connection():
+    print("Connecting to database...")
+    conn = "DatabaseConnection"  # Simulate a database connection
+    yield conn
+    print("Closing database connection...")
+
+@manage_resource_with_context(db_connection)
+def query_database(conn, query):
+    print(f"Executing query: {query} on {conn}")
+
+# Usage
+query_database("SELECT * FROM users")
+# Output:
+# Connecting to database...
+# Executing query: SELECT * FROM users on DatabaseConnection
+# Closing database connection...
+
+
+# Managing External API Rate Limits
+
+import time
+
+def rate_limit(max_calls, time_period):
+    """
+    A decorator to limit the rate of function calls.
+    """
+    from collections import deque
+    import functools
+
+    calls = deque()
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            current_time = time.time()
+            while calls and calls[0] < current_time - time_period:
+                calls.popleft()
+            if len(calls) >= max_calls:
+                raise Exception("Rate limit exceeded!")
+            calls.append(current_time)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+# Example: API Call
+@rate_limit(max_calls=3, time_period=10)  # Max 3 calls per 10 seconds
+def api_call(endpoint):
+    print(f"Calling API endpoint: {endpoint}")
+
+# Usage
+for i in range(5):
+    try:
+        api_call(f"/endpoint/{i}")
+    except Exception as e:
+        print(e)
+# Output:
+# Calling API endpoint: /endpoint/0
+# Calling API endpoint: /endpoint/1
+# Calling API endpoint: /endpoint/2
+# Rate limit exceeded!
+# Rate limit exceeded!
+
+
+
+
+
+
