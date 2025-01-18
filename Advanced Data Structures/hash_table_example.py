@@ -3,6 +3,10 @@ A hash table can be implemented using a list of lists (or dictionaries) where ea
 key-value pair is stored in a specific "bucket" determined by a hash function. When
 implementing a hash table, consider how to handle collisions (e.g., with chaining or open
 addressing).
+
+Collision Resolution Techniques:
+    1. Chaining: Uses linked lists at each index to store multiple items.
+    2. Open Addressing: Finds alternative indices for collisions using probing methods.
 """
 
 class HashTable:
